@@ -256,3 +256,5 @@ COMMON_FLAG(bool, detect_write_exec, false,
 COMMON_FLAG(bool, test_only_emulate_no_memorymap, false,
             "TEST ONLY fail to read memory mappings to emulate sanitized "
             "\"init\"")
+COMMON_FLAG(bool, address_watcher, false, "Enable Address Watcher")
+

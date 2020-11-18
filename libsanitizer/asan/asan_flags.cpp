@@ -140,6 +140,12 @@ void InitializeFlags() {
            SanitizerToolName);
     Die();
   }
+
+  // Address Watcher validation
+  if (common_flags()->detect_leaks && common_flags()->address_watcher) {
+     address_watcher = 1;
+  }
+
   // Ensure that redzone is at least SHADOW_GRANULARITY.
   if (f->redzone < (int)SHADOW_GRANULARITY)
     f->redzone = SHADOW_GRANULARITY;

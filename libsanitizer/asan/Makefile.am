@@ -13,7 +13,7 @@ AM_CXXFLAGS += -std=gnu++14
 AM_CXXFLAGS += $(EXTRA_CXXFLAGS)
 ACLOCAL_AMFLAGS = -I $(top_srcdir) -I $(top_srcdir)/config
 
-toolexeclib_LTLIBRARIES = libasan.la
+toolexeclib_LTLIBRARIES = libasan.la libasanrtl.la
 nodist_toolexeclib_HEADERS = libasan_preinit.o
 
 asan_files = \
@@ -39,7 +39,6 @@ asan_files = \
 	asan_premap_shadow.cpp \
 	asan_report.cpp \
 	asan_rtems.cpp \
-	asan_rtl.cpp \
 	asan_shadow_setup.cpp \
 	asan_stack.cpp \
 	asan_stats.cpp \
@@ -59,6 +58,12 @@ if LIBBACKTRACE_SUPPORTED
 libasan_la_LIBADD += $(top_builddir)/libbacktrace/libsanitizer_libbacktrace.la
 endif
 libasan_la_LIBADD += $(LIBSTDCXX_RAW_CXX_LDFLAGS)
+
+libasan_la_LIBADD += libasanrtl.la
+libasanrtl_la_SOURCES = asan_rtl.cpp
+libasanrtl_la_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic -Wno-long-long  -fPIC -fno-builtin -fno-exceptions -fno-rtti -fomit-frame-pointer -funwind-tables -fvisibility=hidden -Wno-variadic-macros -fno-ipa-icf -mgeneral-regs-only
+libasanrtl_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version` $(link_libasan)
+
 
 libasan_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version` $(link_libasan)
 

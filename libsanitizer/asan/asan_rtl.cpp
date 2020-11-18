@@ -30,6 +30,8 @@
 #include "lsan/lsan_common.h"
 #include "ubsan/ubsan_init.h"
 #include "ubsan/ubsan_platform.h"
+#include "sanitizer_common/sanitizer_watchaddrfileio.h"
+
 
 uptr __asan_shadow_memory_dynamic_address;  // Global interface symbol.
 int __asan_option_detect_stack_use_after_return;  // Global interface symbol.
@@ -99,6 +101,7 @@ static void OnLowLevelAllocate(uptr ptr, uptr size) {
 // exported functions
 #define ASAN_REPORT_ERROR(type, is_write, size)                     \
 extern "C" NOINLINE INTERFACE_ATTRIBUTE                             \
+void __asan_report_ ## type ## size(uptr addr) __attribute__ ((no_caller_saved_registers)); \
 void __asan_report_ ## type ## size(uptr addr) {                    \
   GET_CALLER_PC_BP_SP;                                              \
   ReportGenericError(pc, bp, sp, addr, is_write, size, 0, true);    \
@@ -640,4 +643,13 @@ void __asan_init() {
 
 void __asan_version_mismatch_check() {
   // Do nothing.
+}
+
+void __asan_binary_date(uptr time) {
+
+    if (address_watcher)
+    {
+       CheckIfBinaryRecompiled(time); 
+       InitializeWatchlist();
+    } 
 }

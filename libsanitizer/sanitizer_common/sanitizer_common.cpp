@@ -21,6 +21,7 @@
 namespace __sanitizer {
 
 const char *SanitizerToolName = "SanitizerTool";
+bool address_watcher = false;
 
 atomic_uint32_t current_verbosity;
 uptr PageSizeCached;

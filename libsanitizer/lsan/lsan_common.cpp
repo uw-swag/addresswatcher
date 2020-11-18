@@ -24,6 +24,8 @@
 #include "sanitizer_common/sanitizer_suppressions.h"
 #include "sanitizer_common/sanitizer_thread_registry.h"
 #include "sanitizer_common/sanitizer_tls_get_addr.h"
+#include "sanitizer_common/sanitizer_watchaddr.h"
+#include "sanitizer_common/sanitizer_watchaddrfileio.h"
 
 #if CAN_SANITIZE_LEAKS
 namespace __lsan {
@@ -737,7 +739,11 @@ void LeakReport::PrintReportForLeak(uptr index) {
          leaks_[index].total_size, leaks_[index].hit_count);
   Printf("%s", d.Default());
 
-  PrintStackTraceById(leaks_[index].stack_trace_id);
+  StackTrace s = StackDepotGet(leaks_[index].stack_trace_id);
+  s.Print();
+
+  if (address_watcher)
+     UpdateWatchlist(&s,StackDepotGetLastUse(leaks_[index].stack_trace_id));
 
   if (flags()->report_objects) {
     Printf("Objects leaked above:\n");

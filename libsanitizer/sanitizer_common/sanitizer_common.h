@@ -51,6 +51,7 @@ static const uptr kErrorMessageBufferSize = 1 << 16;
 const u64 kExternalPCBit = 1ULL << 60;
 
 extern const char *SanitizerToolName;  // Can be changed by the tool.
+extern bool address_watcher;  // Is address watcher enabled?
 
 extern atomic_uint32_t current_verbosity;
 inline void SetVerbosity(int verbosity) {
@@ -211,6 +212,7 @@ void SetLowLevelAllocateCallback(LowLevelAllocateCallback callback);
 // IO
 void CatastrophicErrorWrite(const char *buffer, uptr length);
 void RawWrite(const char *buffer);
+void WatchAddrRawWrite(const char *buffer);
 bool ColorizeReports();
 void RemoveANSIEscapeSequencesFromString(char *buffer);
 void Printf(const char *format, ...);
@@ -694,6 +696,11 @@ bool ReadFileToVector(const char *file_name,
 // The total number of read bytes is stored in '*read_len'.
 // Returns true if file was successfully opened and read.
 bool ReadFileToBuffer(const char *file_name, char **buff, uptr *buff_size,
+                      uptr *read_len, uptr max_len = 1 << 26,
+                      error_t *errno_p = nullptr);
+
+// Opens the Address Report and reads the watchlist of stack traces for tracking.
+bool ReadAddrReportToBuffer(char **buff, uptr *buff_size,
                       uptr *read_len, uptr max_len = 1 << 26,
                       error_t *errno_p = nullptr);
 

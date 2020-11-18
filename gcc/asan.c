@@ -63,6 +63,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "fnmatch.h"
 #include "tree-inline.h"
 #include "tree-ssa.h"
+#include "time.h"
 
 /* AddressSanitizer finds out-of-bounds and use-after-free bugs
    with <2x slowdown on average.
@@ -3088,6 +3089,11 @@ asan_finish_file (void)
       append_to_statement_list (build_call_expr (fn, 0), &asan_ctor_statements);
       fn = builtin_decl_implicit (BUILT_IN_ASAN_VERSION_MISMATCH_CHECK);
       append_to_statement_list (build_call_expr (fn, 0), &asan_ctor_statements);
+
+      fn = builtin_decl_implicit (BUILT_IN_ASAN_BINARY_DATE);
+      time_t rawtime;
+      tree date_tree = build_int_cst (pointer_sized_int_node, (long int) time(&rawtime));
+      append_to_statement_list (build_call_expr (fn, 1, date_tree), &asan_ctor_statements);
     }
   FOR_EACH_DEFINED_VARIABLE (vnode)
     if (TREE_ASM_WRITTEN (vnode->decl)

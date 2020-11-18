@@ -30,6 +30,8 @@
 #include "sanitizer_common/sanitizer_list.h"
 #include "sanitizer_common/sanitizer_quarantine.h"
 #include "sanitizer_common/sanitizer_stackdepot.h"
+#include "sanitizer_common/sanitizer_watchaddrfileio.h"
+#include "sanitizer_common/sanitizer_watchaddr.h"
 
 namespace __asan {
 
@@ -572,16 +574,22 @@ struct Allocator {
 
     m->SetAllocContext(t ? t->tid() : 0, StackDepotPut(*stack));
 
+    u8 shadowval = 0;
+    if (address_watcher && IsAddrToWatch(stack))
+    {
+      shadowval = 0xe0;
+    }
+
     uptr size_rounded_down_to_granularity =
         RoundDownTo(size, SHADOW_GRANULARITY);
     // Unpoison the bulk of the memory region.
     if (size_rounded_down_to_granularity)
-      PoisonShadow(user_beg, size_rounded_down_to_granularity, 0);
+      PoisonShadow(user_beg, size_rounded_down_to_granularity, shadowval);
     // Deal with the end of the region if size is not aligned to granularity.
     if (size != size_rounded_down_to_granularity && CanPoisonMemory()) {
       u8 *shadow =
           (u8 *)MemToShadow(user_beg + size_rounded_down_to_granularity);
-      *shadow = fl.poison_partial ? (size & (SHADOW_GRANULARITY - 1)) : 0;
+      *shadow = (fl.poison_partial ? (size & (SHADOW_GRANULARITY - 1)) : 0) | shadowval;
     }
 
     AsanStats &thread_stats = GetCurrentThreadStats();
@@ -688,6 +696,23 @@ struct Allocator {
       if (!IsSystemHeapAddress(p))
         ReportFreeNotMalloced(p, stack);
       return;
+    }
+
+    if (address_watcher)
+    {
+       // Find if any pointers to watched memory exist in memory to free.
+       if (TrackPointersToWatchedMemory(ptr,m->UsedSize(),stack))
+          stack->Print();
+
+       // This memory was not freed in some other run. Save the stack for display.
+       u8 *shadow = 0x00;
+       shadow =(u8 *)MemToShadow((uptr)ptr);
+       if ((shadow!=0x00) && ((*shadow & 0xe0) == 0xe0))
+       {
+          stack->Print();
+          StackDepotPutLastUse(m->alloc_context_id,stack);
+          return;
+       }
     }
 
     ASAN_FREE_HOOK(ptr);
